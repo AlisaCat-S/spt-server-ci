@@ -375,7 +375,7 @@ jobs:
   #         platforms: linux/amd64,linux/arm64
 
   build-server-windows:
-    needs: [prepare, build-server-linux]
+    needs: [prepare]
     runs-on: windows-latest
     env:
       OUTPUT_DIR: spt-server
@@ -389,10 +389,12 @@ jobs:
     steps:
       - name: Checkout
         uses: actions/checkout@v4
+        with:
+          lfs: false
 
       - name: Clone AirroCo's Server Code
         run: |
-          git clone -b ${{ env.RELEASE_BRANCH }} --depth=1 ${{ env.SERVER_URL }}/${{ env.REPOSITORY_SPT_SERVER_AIRRYCO }} ${{ env.SOURCECODE_DIR }}
+          git clone -b ${{ env.RELEASE_BRANCH }} ${{ env.SERVER_URL }}/${{ env.REPOSITORY_SPT_SERVER }}.git ${{ env.SOURCECODE_DIR }}
           cd ${{ env.SOURCECODE_DIR }}
           git lfs pull
         shell: bash
