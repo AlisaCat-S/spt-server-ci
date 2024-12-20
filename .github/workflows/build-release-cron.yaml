@@ -144,8 +144,8 @@ jobs:
         run: |
           cd ${{ env.SOURCECODE_DIR }}
           git pull
-          git fetch -u ${{ env.SERVER_URL }}/${{ env.REPOSITORY_SPT_SERVER }}.git ${{ env.RELEASE_BRANCH }}:SPT-${{ env.RELEASE_BRANCH }}
-          git merge -m "🤖 Merge tag \`${{ needs.prepare.outputs.TARGET_TAG }}\` from SPT" --no-ff ${{ needs.prepare.outputs.TARGET_TAG }}
+          git fetch -u ${{ env.SERVER_URL }}/${{ env.REPOSITORY_SPT_SERVER }}.git ${{ env.RELEASE_BRANCH }}:SPT-${{ env.RELEASE_BRANCH }} --config filter.lfs.smudge="git-lfs smudge --server=https://lfs.sp-tarkov.com/sp-tarkov/server"
+          git merge -m "🤖 Merge tag \`${{ needs.prepare.outputs.TARGET_TAG }}\` from SPT" --no-ff ${{ needs.prepare.outputs.TARGET_TAG }} 
         shell: bash
 
       - name: Runner Debug Information
@@ -206,18 +206,18 @@ jobs:
           path: ${{ env.SOURCECODE_DIR }}/project/${{ env.OUTPUT_DIR }}
           overwrite: true
 
-      - name: Push Linux Server Code And Tag
-        run: |
-          cd ${{ env.SOURCECODE_DIR }}
-          git pull
-          REMOTE_URL="https://AirryCo:${{ secrets.AIRRYCO_TOKEN }}@github.com/${{ env.REPOSITORY_SPT_SERVER_AIRRYCO }}.git"
-          git remote set-url origin "$REMOTE_URL"
-          git push
-          git tag -d ${{ needs.prepare.outputs.TARGET_TAG }}
-          git tag ${{ needs.prepare.outputs.TARGET_TAG }}
-          git push -u origin ${{ env.RELEASE_BRANCH }}
-          git push -u origin ${{ needs.prepare.outputs.TARGET_TAG }}
-        shell: bash
+      # - name: Push Linux Server Code And Tag
+      #   run: |
+      #     cd ${{ env.SOURCECODE_DIR }}
+      #     git pull
+      #     REMOTE_URL="https://AirryCo:${{ secrets.AIRRYCO_TOKEN }}@github.com/${{ env.REPOSITORY_SPT_SERVER_AIRRYCO }}.git"
+      #     git remote set-url origin "$REMOTE_URL"
+      #     git push
+      #     git tag -d ${{ needs.prepare.outputs.TARGET_TAG }}
+      #     git tag ${{ needs.prepare.outputs.TARGET_TAG }}
+      #     git push -u origin ${{ env.RELEASE_BRANCH }}
+      #     git push -u origin ${{ needs.prepare.outputs.TARGET_TAG }}
+      #   shell: bash
 
   build-docker-image-multi-arch:
     needs: [prepare, build-server-linux]
