@@ -474,7 +474,7 @@ jobs:
           overwrite: true
 
   assemble-and-publish:
-    needs: [prepare, build-server-windows, build-server-linux, build-docker-image-multi-arch]
+    needs: [prepare, build-server-windows, build-server-linux]
     runs-on: ubuntu-latest
 
     steps:
