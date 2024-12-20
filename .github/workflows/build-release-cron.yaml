@@ -123,6 +123,9 @@ jobs:
     steps:
       - name: Checkout
         uses: actions/checkout@v4
+        with:
+          lfs: false
+          
       - name: Setup Git Config
         run: |
           git config --global user.name "github-actions[bot]"
@@ -132,7 +135,6 @@ jobs:
         run: |
           git clone -b ${{ env.RELEASE_BRANCH }} ${{ env.SERVER_URL }}/${{ env.REPOSITORY_SPT_SERVER_AIRRYCO }} ${{ env.SOURCECODE_DIR }}
           cd ${{ env.SOURCECODE_DIR }}
-          git lfs pull
         shell: bash
 
       - name: Setup Node
@@ -144,9 +146,12 @@ jobs:
         run: |
           cd ${{ env.SOURCECODE_DIR }}
           git pull
-          git fetch -u ${{ env.SERVER_URL }}/${{ env.REPOSITORY_SPT_SERVER }}.git ${{ env.RELEASE_BRANCH }}:SPT-${{ env.RELEASE_BRANCH }} --config filter.lfs.smudge="git-lfs smudge --server=https://lfs.sp-tarkov.com/sp-tarkov/server"
+          git fetch -u ${{ env.SERVER_URL }}/${{ env.REPOSITORY_SPT_SERVER }}.git ${{ env.RELEASE_BRANCH }}:SPT-${{ env.RELEASE_BRANCH }}
           git merge -m "🤖 Merge tag \`${{ needs.prepare.outputs.TARGET_TAG }}\` from SPT" --no-ff ${{ needs.prepare.outputs.TARGET_TAG }} 
         shell: bash
+
+      - name: Checkout LFS
+        run: git lfs pull
 
       - name: Runner Debug Information
         id: debug-info
