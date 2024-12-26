@@ -376,6 +376,7 @@ jobs:
 
   build-server-windows:
     needs: [prepare]
+    if: ${{ needs.prepare.outputs.PROCEED == 'true' }}
     runs-on: windows-latest
     env:
       OUTPUT_DIR: spt-server
