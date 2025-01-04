@@ -143,13 +143,15 @@ jobs:
         with:
           node-version: 20.11.1
 
-      # - name: Merge Server Code From SPT
-      #   run: |
-      #     cd ${{ env.SOURCECODE_DIR }}
-      #     git pull
-      #     git fetch -u ${{ env.SERVER_URL }}/${{ env.REPOSITORY_SPT_SERVER }}.git ${{ env.RELEASE_BRANCH }}:SPT-${{ env.RELEASE_BRANCH }}
-      #     git merge -m "🤖 Merge tag \`${{ needs.prepare.outputs.TARGET_TAG }}\` from SPT" --no-ff ${{ needs.prepare.outputs.TARGET_TAG }} 
-      #   shell: bash
+      - name: Merge Server Code From SPT
+        run: |
+          cd ${{ env.SOURCECODE_DIR }}
+          # git pull
+          # git fetch -u ${{ env.SERVER_URL }}/${{ env.REPOSITORY_SPT_SERVER }}.git ${{ env.RELEASE_BRANCH }}:SPT-${{ env.RELEASE_BRANCH }}
+          # git merge -m "🤖 Merge tag \`${{ needs.prepare.outputs.TARGET_TAG }}\` from SPT" --no-ff ${{ needs.prepare.outputs.TARGET_TAG }} 
+          git tag
+          git checkout ${{ needs.prepare.outputs.TARGET_TAG }}
+        shell: bash
 
       
 
