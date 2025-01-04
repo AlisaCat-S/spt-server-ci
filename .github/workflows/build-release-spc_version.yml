@@ -130,10 +130,18 @@ jobs:
           git config --global user.name "github-actions[bot]"
           git config --global user.email "bot@github.com"
 
-      - name: Clone AirryCo's Linux Server Code
+      - name: Clone Linux Server Code
         run: |
-          git clone -b ${{ env.RELEASE_BRANCH }} ${{ env.SERVER_URL }}/${{ env.REPOSITORY_SPT_SERVER }}.git ${{ env.SOURCECODE_DIR }}
+          # git clone -b ${{ env.RELEASE_BRANCH }} ${{ env.SERVER_URL }}/${{ env.REPOSITORY_SPT_SERVER }}.git ${{ env.SOURCECODE_DIR }}
+          git clone -b ${{ needs.prepare.outputs.TARGET_TAG }} ${{ env.SERVER_URL }}/${{ env.REPOSITORY_SPT_SERVER }}.git ${{ env.SOURCECODE_DIR }}
+        shell: bash
+
+      - name: Check Verison and Pull FLS
+        run: |
           cd ${{ env.SOURCECODE_DIR }}
+          grep "sptVersion" project/assets/configs/core.json | awk -F': ' '{print $2}' | awk -F',' '{print $1}'
+          grep "version" ‎project/package.json | awk -F': ' '{print $2}' | awk -F',' '{print $1}'
+          git lfs install --local
           git lfs pull
         shell: bash
 
@@ -142,17 +150,17 @@ jobs:
         with:
           node-version: 20.11.1
 
-      - name: Merge Server Code From SPT
-        run: |
-          cd ${{ env.SOURCECODE_DIR }}
-          git pull
-          git describe --tags
-          # git fetch -u ${{ env.SERVER_URL }}/${{ env.REPOSITORY_SPT_SERVER }}.git ${{ env.RELEASE_BRANCH }}:SPT-${{ env.RELEASE_BRANCH }}
-          # git merge -m "🤖 Merge tag \`${{ needs.prepare.outputs.TARGET_TAG }}\` from SPT" --no-ff ${{ needs.prepare.outputs.TARGET_TAG }} 
-          git tag
-          git checkout -b build_temp ${{ needs.prepare.outputs.TARGET_TAG }}
-          git describe --tags
-        shell: bash
+      # - name: Merge Server Code From SPT
+      #   run: |
+      #     cd ${{ env.SOURCECODE_DIR }}
+      #     git pull
+      #     git describe --tags
+      #     # git fetch -u ${{ env.SERVER_URL }}/${{ env.REPOSITORY_SPT_SERVER }}.git ${{ env.RELEASE_BRANCH }}:SPT-${{ env.RELEASE_BRANCH }}
+      #     # git merge -m "🤖 Merge tag \`${{ needs.prepare.outputs.TARGET_TAG }}\` from SPT" --no-ff ${{ needs.prepare.outputs.TARGET_TAG }} 
+      #     git tag
+      #     git checkout -b build_temp ${{ needs.prepare.outputs.TARGET_TAG }}
+      #     git describe --tags
+      #   shell: bash
 
       
 
@@ -523,8 +531,6 @@ jobs:
       - name: Compress Releases
         id: compress-release
         run: |
-          # cd windows
-          # zip -r ../${{ needs.build-server-windows.outputs.WIN_RELEASE_FILE }} *
           cd ../linux
           zip -r ../${{ needs.build-server-linux.outputs.LINUX_RELEASE_FILE }} *
           ls -R ..
@@ -532,9 +538,7 @@ jobs:
       - name: Compress Releases With Fika
         id: compress-release-fika
         run: |
-          # cd windows
-          # unzip ../fika-server.zip
-          # zip -r ../${{ needs.build-server-windows.outputs.WIN_RELEASE_FIKA_FILE }} *
+
           cd ../linux
           unzip ../fika-server.zip
           zip -r ../${{ needs.build-server-linux.outputs.LINUX_RELEASE_FIKA_FILE }} *
