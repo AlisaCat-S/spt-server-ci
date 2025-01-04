@@ -39,6 +39,8 @@ jobs:
       - name: Get Latest Tag From SPT
         id: get-latest-tag
         run: |
+          git clone -b ${{ env.RELEASE_BRANCH }} ${{ env.SERVER_URL }}/${{ env.REPOSITORY_SPT_SERVER }}.git Server
+          cd Server
           echo "👽 SPT_SERVER_LATEST_TAG = ${{ github.event.inputs.SPT_SERVER_LATEST_TAG }}"
           echo "SPT_SERVER_LATEST_TAG=${{ github.event.inputs.SPT_SERVER_LATEST_TAG }}" >> $GITHUB_OUTPUT
         shell: bash
