@@ -1,4 +1,4 @@
-name: SPT-Server Build Release
+name: SPT-Server Build SPC Version Release
 
 on:
   workflow_dispatch:
