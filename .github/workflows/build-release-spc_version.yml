@@ -145,11 +145,13 @@ jobs:
       - name: Merge Server Code From SPT
         run: |
           cd ${{ env.SOURCECODE_DIR }}
-          # git pull
+          git pull
+          git describe --tags
           # git fetch -u ${{ env.SERVER_URL }}/${{ env.REPOSITORY_SPT_SERVER }}.git ${{ env.RELEASE_BRANCH }}:SPT-${{ env.RELEASE_BRANCH }}
           # git merge -m "🤖 Merge tag \`${{ needs.prepare.outputs.TARGET_TAG }}\` from SPT" --no-ff ${{ needs.prepare.outputs.TARGET_TAG }} 
           git tag
-          git checkout ${{ needs.prepare.outputs.TARGET_TAG }}
+          git checkout -b build_temp ${{ needs.prepare.outputs.TARGET_TAG }}
+          git describe --tags
         shell: bash
 
       
@@ -190,6 +192,7 @@ jobs:
         id: build-server
         run: |
           cd ${{ env.SOURCECODE_DIR }}/project
+          git describe --tags
           npm run build:release
           ls -l build
           mv build ${{ env.OUTPUT_DIR }}
@@ -375,110 +378,110 @@ jobs:
   #           org.opencontainers.image.revision=${{ needs.build-server-linux.outputs.LINUX_COMMIT_ID_WHOLE }}
   #         platforms: linux/amd64,linux/arm64
 
-  build-server-windows:
-    needs: [prepare]
-    if: ${{ needs.prepare.outputs.PROCEED == 'true' }}
-    runs-on: windows-latest
-    env:
-      OUTPUT_DIR: spt-server
-      SOURCECODE_DIR: c:/snapshot
-    outputs:
-      WIN_COMMIT_ID: ${{ steps.debug-info.outputs.COMMIT_ID }}
-      WIN_ARTIFACT: ${{ steps.filename.outputs.WIN_ARTIFACT }}
-      WIN_RELEASE_FILE: ${{ steps.filename.outputs.WIN_RELEASE }}
-      WIN_RELEASE_FIKA_FILE: ${{ steps.filename.outputs.WIN_RELEASE_FIKA }}
+  # build-server-windows:
+  #   needs: [prepare]
+  #   if: ${{ needs.prepare.outputs.PROCEED == 'true' }}
+  #   runs-on: windows-latest
+  #   env:
+  #     OUTPUT_DIR: spt-server
+  #     SOURCECODE_DIR: c:/snapshot
+  #   outputs:
+  #     WIN_COMMIT_ID: ${{ steps.debug-info.outputs.COMMIT_ID }}
+  #     WIN_ARTIFACT: ${{ steps.filename.outputs.WIN_ARTIFACT }}
+  #     WIN_RELEASE_FILE: ${{ steps.filename.outputs.WIN_RELEASE }}
+  #     WIN_RELEASE_FIKA_FILE: ${{ steps.filename.outputs.WIN_RELEASE_FIKA }}
 
-    steps:
-      - name: Checkout
-        uses: actions/checkout@v4
-        with:
-          lfs: false
+  #   steps:
+  #     - name: Checkout
+  #       uses: actions/checkout@v4
+  #       with:
+  #         lfs: false
 
-      - name: Clone AirroCo's Server Code
-        run: |
-          git clone -b ${{ env.RELEASE_BRANCH }} ${{ env.SERVER_URL }}/${{ env.REPOSITORY_SPT_SERVER }}.git ${{ env.SOURCECODE_DIR }}
-          cd ${{ env.SOURCECODE_DIR }}
-          git lfs pull
-        shell: bash
+  #     - name: Clone AirroCo's Server Code
+  #       run: |
+  #         git clone -b ${{ env.RELEASE_BRANCH }} ${{ env.SERVER_URL }}/${{ env.REPOSITORY_SPT_SERVER }}.git ${{ env.SOURCECODE_DIR }}
+  #         cd ${{ env.SOURCECODE_DIR }}
+  #         git lfs pull
+  #       shell: bash
 
-      # Modify the JSON file with PowerShell
-      - name: Modify JSON file with PowerShell
-        run: |
-          cd ${{ env.SOURCECODE_DIR }}/project/assets/configs
-          $json = Get-Content -Path "core.json" | ConvertFrom-Json
-          $json.projectName = "AirryCo's SPT Windows"
-          $json | ConvertTo-Json -Depth 10 | Set-Content -Path "core.json"
-        shell: pwsh
-      - name: Replace serverExeName
-        run: |
-          cd ${{ env.SOURCECODE_DIR }}/project
-          sed -i 's/SPT.Server/SPT.Server.exe/g' gulpfile.mjs
-        shell: bash
+  #     # Modify the JSON file with PowerShell
+  #     - name: Modify JSON file with PowerShell
+  #       run: |
+  #         cd ${{ env.SOURCECODE_DIR }}/project/assets/configs
+  #         $json = Get-Content -Path "core.json" | ConvertFrom-Json
+  #         $json.projectName = "AirryCo's SPT Windows"
+  #         $json | ConvertTo-Json -Depth 10 | Set-Content -Path "core.json"
+  #       shell: pwsh
+  #     - name: Replace serverExeName
+  #       run: |
+  #         cd ${{ env.SOURCECODE_DIR }}/project
+  #         sed -i 's/SPT.Server/SPT.Server.exe/g' gulpfile.mjs
+  #       shell: bash
 
-      - name: Setup Node
-        uses: actions/setup-node@v4
-        with:
-          node-version: 20.11.1
+  #     - name: Setup Node
+  #       uses: actions/setup-node@v4
+  #       with:
+  #         node-version: 20.11.1
 
-      - name: Runner Debug Information
-        id: debug-info
-        run: |
-          cp -v ${{ env.SOURCECODE_DIR }}/project/package.json .
-          cd ${{ env.SOURCECODE_DIR }}
-          echo "git version: $(git --version)"
-          echo "git lfs version: $(git-lfs --version)"
-          echo "node.js version: $(node --version)"
-          echo "npm version: $(npm --version)"
-          echo "latest commit hash: $(git rev-parse HEAD)"
-          echo "last commit message:" && git log -1 --pretty=%B
-          echo "COMMIT_ID=$(git rev-parse --short HEAD)" >> $GITHUB_OUTPUT
-        shell: bash
+  #     - name: Runner Debug Information
+  #       id: debug-info
+  #       run: |
+  #         cp -v ${{ env.SOURCECODE_DIR }}/project/package.json .
+  #         cd ${{ env.SOURCECODE_DIR }}
+  #         echo "git version: $(git --version)"
+  #         echo "git lfs version: $(git-lfs --version)"
+  #         echo "node.js version: $(node --version)"
+  #         echo "npm version: $(npm --version)"
+  #         echo "latest commit hash: $(git rev-parse HEAD)"
+  #         echo "last commit message:" && git log -1 --pretty=%B
+  #         echo "COMMIT_ID=$(git rev-parse --short HEAD)" >> $GITHUB_OUTPUT
+  #       shell: bash
 
-      - name: Cache NPM Dependencies
-        id: cache-npm-dependencies
-        uses: actions/cache@v4
-        with:
-          path: |
-            ${{ env.SOURCECODE_DIR }}/project/node_modules
-          key: ${{ runner.os }}-npm-dependencies-${{ hashFiles('package.json') }}
-          restore-keys: |
-            ${{ runner.os }}-npm-dependencies-
+  #     - name: Cache NPM Dependencies
+  #       id: cache-npm-dependencies
+  #       uses: actions/cache@v4
+  #       with:
+  #         path: |
+  #           ${{ env.SOURCECODE_DIR }}/project/node_modules
+  #         key: ${{ runner.os }}-npm-dependencies-${{ hashFiles('package.json') }}
+  #         restore-keys: |
+  #           ${{ runner.os }}-npm-dependencies-
 
-      - name: Install NPM Dependencies
-        if: steps.cache-npm-dependencies.outputs.cache-hit != 'true'
-        run: |
-          cd ${{ env.SOURCECODE_DIR }}/project
-          npm install
-        shell: pwsh
+  #     - name: Install NPM Dependencies
+  #       if: steps.cache-npm-dependencies.outputs.cache-hit != 'true'
+  #       run: |
+  #         cd ${{ env.SOURCECODE_DIR }}/project
+  #         npm install
+  #       shell: pwsh
 
-      - name: Build Windows Server
-        id: build-server
-        run: |
-          cd ${{ env.SOURCECODE_DIR }}/project
-          npm run build:release
-          ls -l build
-          mv build ${{ env.OUTPUT_DIR }}
-        shell: bash
+  #     - name: Build Windows Server
+  #       id: build-server
+  #       run: |
+  #         cd ${{ env.SOURCECODE_DIR }}/project
+  #         npm run build:release
+  #         ls -l build
+  #         mv build ${{ env.OUTPUT_DIR }}
+  #       shell: bash
 
-      - name: Generate Windows File Name
-        id: filename
-        run: |
-          artifact_name=${{ env.OUTPUT_DIR }}-${{ needs.prepare.outputs.TARGET_TAG }}-win-release-${{ steps.debug-info.outputs.COMMIT_ID }}-EFT${{ needs.prepare.outputs.EFT_VERSION }}-${{ needs.prepare.outputs.BUILD_DATE_TIME }}-artifact
-          release_name=${{ env.OUTPUT_DIR }}-${{ needs.prepare.outputs.TARGET_TAG }}-win-release-${{ steps.debug-info.outputs.COMMIT_ID }}-EFT${{ needs.prepare.outputs.EFT_VERSION }}-${{ needs.prepare.outputs.BUILD_DATE_TIME }}
-          echo "WIN_ARTIFACT=$artifact_name" >> $GITHUB_OUTPUT
-          echo "WIN_RELEASE=$release_name.zip" >> $GITHUB_OUTPUT
-          echo "WIN_RELEASE_FIKA=$release_name-fika.zip" >> $GITHUB_OUTPUT
-        shell: bash
+  #     - name: Generate Windows File Name
+  #       id: filename
+  #       run: |
+  #         artifact_name=${{ env.OUTPUT_DIR }}-${{ needs.prepare.outputs.TARGET_TAG }}-win-release-${{ steps.debug-info.outputs.COMMIT_ID }}-EFT${{ needs.prepare.outputs.EFT_VERSION }}-${{ needs.prepare.outputs.BUILD_DATE_TIME }}-artifact
+  #         release_name=${{ env.OUTPUT_DIR }}-${{ needs.prepare.outputs.TARGET_TAG }}-win-release-${{ steps.debug-info.outputs.COMMIT_ID }}-EFT${{ needs.prepare.outputs.EFT_VERSION }}-${{ needs.prepare.outputs.BUILD_DATE_TIME }}
+  #         echo "WIN_ARTIFACT=$artifact_name" >> $GITHUB_OUTPUT
+  #         echo "WIN_RELEASE=$release_name.zip" >> $GITHUB_OUTPUT
+  #         echo "WIN_RELEASE_FIKA=$release_name-fika.zip" >> $GITHUB_OUTPUT
+  #       shell: bash
 
-      - name: Artifact Windows Server
-        uses: actions/upload-artifact@v4
-        with:
-          name: ${{ steps.filename.outputs.WIN_ARTIFACT }}
-          path: ${{ env.SOURCECODE_DIR }}/project/${{ env.OUTPUT_DIR }}
-          overwrite: true
+  #     - name: Artifact Windows Server
+  #       uses: actions/upload-artifact@v4
+  #       with:
+  #         name: ${{ steps.filename.outputs.WIN_ARTIFACT }}
+  #         path: ${{ env.SOURCECODE_DIR }}/project/${{ env.OUTPUT_DIR }}
+  #         overwrite: true
 
   assemble-and-publish:
-    needs: [prepare, build-server-windows, build-server-linux]
+    needs: [prepare, build-server-linux]
     runs-on: ubuntu-latest
 
     steps:
@@ -501,11 +504,11 @@ jobs:
           git push
         shell: bash
 
-      - name: Download Windows Artifact
-        uses: actions/download-artifact@v4
-        with:
-          name: ${{ needs.build-server-windows.outputs.WIN_ARTIFACT }}
-          path: windows
+      # - name: Download Windows Artifact
+      #   uses: actions/download-artifact@v4
+      #   with:
+      #     name: ${{ needs.build-server-windows.outputs.WIN_ARTIFACT }}
+      #     path: windows
 
       - name: Download Linux Artifact
         uses: actions/download-artifact@v4
@@ -520,8 +523,8 @@ jobs:
       - name: Compress Releases
         id: compress-release
         run: |
-          cd windows
-          zip -r ../${{ needs.build-server-windows.outputs.WIN_RELEASE_FILE }} *
+          # cd windows
+          # zip -r ../${{ needs.build-server-windows.outputs.WIN_RELEASE_FILE }} *
           cd ../linux
           zip -r ../${{ needs.build-server-linux.outputs.LINUX_RELEASE_FILE }} *
           ls -R ..
@@ -529,9 +532,9 @@ jobs:
       - name: Compress Releases With Fika
         id: compress-release-fika
         run: |
-          cd windows
-          unzip ../fika-server.zip
-          zip -r ../${{ needs.build-server-windows.outputs.WIN_RELEASE_FIKA_FILE }} *
+          # cd windows
+          # unzip ../fika-server.zip
+          # zip -r ../${{ needs.build-server-windows.outputs.WIN_RELEASE_FIKA_FILE }} *
           cd ../linux
           unzip ../fika-server.zip
           zip -r ../${{ needs.build-server-linux.outputs.LINUX_RELEASE_FIKA_FILE }} *
@@ -581,9 +584,9 @@ jobs:
               - spt-server: [${{ needs.prepare.outputs.BUILT_TAG }}....${{ needs.prepare.outputs.TARGET_TAG }}](${{ env.SERVER_URL }}/${{ env.REPOSITORY_SPT_SERVER_AIRRYCO }}/compare/${{ needs.prepare.outputs.BUILT_TAG }}...${{ needs.prepare.outputs.TARGET_TAG }})
               - fika-server: [${{ needs.prepare.outputs.BUILT_TAG_FIKA }}....${{ needs.prepare.outputs.TARGET_TAG_FIKA }}](https://github.com/project-fika/Fika-Server/compare/${{ needs.prepare.outputs.BUILT_TAG }}...${{ needs.prepare.outputs.TARGET_TAG }})
           files: |
-            ${{ needs.build-server-windows.outputs.WIN_RELEASE_FILE }}
+            # ${{ needs.build-server-windows.outputs.WIN_RELEASE_FILE }}
             ${{ needs.build-server-linux.outputs.LINUX_RELEASE_FILE }}
-            ${{ needs.build-server-windows.outputs.WIN_RELEASE_FIKA_FILE }}
+            # ${{ needs.build-server-windows.outputs.WIN_RELEASE_FIKA_FILE }}
             ${{ needs.build-server-linux.outputs.LINUX_RELEASE_FIKA_FILE }}
 
       - name: Create Github Release
@@ -630,7 +633,7 @@ jobs:
               - spt-server: [${{ needs.prepare.outputs.BUILT_TAG }}....${{ needs.prepare.outputs.TARGET_TAG }}](${{ env.SERVER_URL }}/${{ env.REPOSITORY_SPT_SERVER_AIRRYCO }}/compare/${{ needs.prepare.outputs.BUILT_TAG }}...${{ needs.prepare.outputs.TARGET_TAG }})
               - fika-server: [${{ needs.prepare.outputs.BUILT_TAG_FIKA }}....${{ needs.prepare.outputs.TARGET_TAG_FIKA }}](https://github.com/project-fika/Fika-Server/compare/${{ needs.prepare.outputs.BUILT_TAG }}...${{ needs.prepare.outputs.TARGET_TAG }})
           files: |
-            ${{ needs.build-server-windows.outputs.WIN_RELEASE_FILE }}
+            # ${{ needs.build-server-windows.outputs.WIN_RELEASE_FILE }}
             ${{ needs.build-server-linux.outputs.LINUX_RELEASE_FILE }}
-            ${{ needs.build-server-windows.outputs.WIN_RELEASE_FIKA_FILE }}
+            # ${{ needs.build-server-windows.outputs.WIN_RELEASE_FIKA_FILE }}
             ${{ needs.build-server-linux.outputs.LINUX_RELEASE_FIKA_FILE }}
