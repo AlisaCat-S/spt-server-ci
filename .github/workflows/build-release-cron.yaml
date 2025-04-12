@@ -6,7 +6,7 @@ on:
   push:
     paths:
       - '.github/workflows/build-release-cron.yaml'
-  
+
 env:
   SERVER_URL: https://github.com
   REPOSITORY_SPT_SERVER: sp-tarkov/server
