@@ -13,7 +13,7 @@ env:
   REPOSITORY_SPT_SERVER_AIRRYCO: AirryCo/spt-server
   RELEASE_BRANCH: master
   RELEASE_BRANCH_FIKA: main
-
+ 
 jobs:
   prepare:
     runs-on: ubuntu-latest
