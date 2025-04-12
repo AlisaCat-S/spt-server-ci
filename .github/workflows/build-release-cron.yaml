@@ -39,9 +39,10 @@ jobs:
       - name: Get Latest Tag From SPT
         id: get-latest-tag
         run: |
-          git clone -b ${{ env.RELEASE_BRANCH }} ${{ env.SERVER_URL }}/${{ env.REPOSITORY_SPT_SERVER }}.git Server
+          GIT_LFS_SKIP_SMUDGE=1 git clone ${{ env.SERVER_URL }}/${{ env.REPOSITORY_SPT_SERVER }}.git Server
           cd Server
-          SPT_SERVER_LATEST_TAG=$(git describe --tags --abbrev=0)
+          git fetch --tags origin
+          SPT_SERVER_LATEST_TAG=$(git for-each-ref --sort=-creatordate --format='%(creatordate:iso) %(refname:short)' refs/tags | head -n1 | awk '{print $4}')
           echo "👽 SPT_SERVER_LATEST_TAG = $SPT_SERVER_LATEST_TAG"
           echo "SPT_SERVER_LATEST_TAG=$SPT_SERVER_LATEST_TAG" >> $GITHUB_OUTPUT
         shell: bash
@@ -51,13 +52,13 @@ jobs:
           source trigger.release
           server_last_built_tag=$server
           server_latest_tag=${{ steps.get-latest-tag.outputs.SPT_SERVER_LATEST_TAG }}
-          if [ "$server_last_built_tag" != "$server_latest_tag" ]; then
+          if [ "$server_last_built_tag" != "$server_latest_tag" ] && ${{ !contains(steps.get-latest-tag.outputs.SPT_SERVER_LATEST_TAG, 'BE') }}; then
             echo "✅ There is different between last-built-tag and lastest-tag, continue to build."
             echo "BUILT_TAG=$server_last_built_tag" >> $GITHUB_OUTPUT
             echo "TARGET_TAG=$server_latest_tag" >> $GITHUB_OUTPUT
             echo "PROCEED=true" >> $GITHUB_OUTPUT
           else
-            echo "✋ last-built-tag and latest-tag are the same, stop building."
+            echo "✋ tags are the same, stop building."
             echo "PROCEED=false" >> $GITHUB_OUTPUT
           fi
         shell: bash
@@ -141,7 +142,7 @@ jobs:
       - name: Setup Node
         uses: actions/setup-node@v4
         with:
-          node-version: 20.11.1
+          node-version: 22.12.0
 
       - name: Merge Server Code From SPT
         run: |
