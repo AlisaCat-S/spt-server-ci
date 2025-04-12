@@ -517,7 +517,7 @@ jobs:
 
       - name: Download Fika-Server
         run: |
-          wget https://github.com/project-fika/Fika-Server/releases/download/${{ needs.prepare.outputs.TARGET_TAG_FIKA }}/fika-server.zip
+          wget https://github.com/project-fika/Fika-Server/releases/download/${{ needs.prepare.outputs.TARGET_TAG_FIKA }}/fika-server-$(echo ${{ needs.prepare.outputs.TARGET_TAG_FIKA }} | cut -c2-).zip -O fika-server.zip
 
       - name: Compress Releases
         id: compress-release
@@ -548,6 +548,7 @@ jobs:
           tag_name: ${{ needs.prepare.outputs.TARGET_TAG }}
           prerelease: true
           body: |
+            只提供服务端覆盖文件下载 docker镜像无效
             SPT: ***${{ needs.prepare.outputs.SPT_VERSION }}***
 
             Tarkov: ***${{ needs.prepare.outputs.EFT_VERSION }}***
