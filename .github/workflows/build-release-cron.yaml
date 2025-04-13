@@ -6,6 +6,7 @@ on:
   push:
     paths:
       - '.github/workflows/build-release-cron.yaml'
+  workflow_dispatch:
 
 env:
   SERVER_URL: https://github.com
